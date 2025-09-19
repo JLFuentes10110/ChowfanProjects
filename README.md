@@ -41,7 +41,6 @@ A blockchain-based project with a clean architecture and seamless integration ac
 
 ## 📌 Project Notes
 - Designed for modular scalability.  
-- Follows REST API best practices.  
 - Built with blockchain integration in mind.  
 
 ---
