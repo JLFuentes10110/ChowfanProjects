@@ -11,7 +11,8 @@ A blockchain-based project with a clean architecture and seamless integration ac
 ---
 
 ## 🎨 Frontend
-![App Screenshot](assets/UI.png)
+![App Screenshot](frontend/src/assets/UI.png)
+
 
 ---
 
