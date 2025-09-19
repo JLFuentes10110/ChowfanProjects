@@ -91,6 +91,15 @@ body {
   margin-bottom: 20px;
 }
 
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #8B4513; 
+  font-size: 0.9rem;
+}
+
+
 .input-field, .textarea-field {
   width: 100%;
   padding: 15px 20px;
