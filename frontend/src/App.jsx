@@ -43,24 +43,27 @@ function App() {
         </header>
 
         <div className="form-container">
-          <div className="form-group">
-            <input 
-              name="user_name" 
-              value={form.user_name} 
-              onChange={handleChange} 
-              placeholder="Your name" 
-              className="input-field"
-            />
-          </div>
-          <div className="form-group">
-            <input 
-              name="title" 
-              value={form.title} 
-              onChange={handleChange} 
-              placeholder="Note title" 
-              className="input-field"
-            />
-          </div>
+            <div className="form-group">
+              <label className="input-label" htmlFor="user_name">Your Name</label>
+              <input 
+                id="user_name"
+                name="user_name" 
+                value={form.user_name} 
+                onChange={handleChange} 
+                className="input-field"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="input-label" htmlFor="title">Note Title</label>
+              <input 
+                id="title"
+                name="title" 
+                value={form.title} 
+                onChange={handleChange} 
+                className="input-field"
+              />
+            </div>
           <div className="form-group">
             <textarea 
               name="content" 
