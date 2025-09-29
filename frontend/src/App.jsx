@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import logo from "./assets/logo.png";
 import './App.css';
 
 function App() {
@@ -37,7 +38,10 @@ function App() {
     <div className="app">
       <div className="container">
         <header className="header">
-          <div className="coffee-icon">☕</div>
+          <img 
+            src={logo}
+            className="coffee-icon" 
+          />
           <h1 className="title">Coffee Notes</h1>
           <p className="subtitle">Brew your thoughts, one note at a time</p>
         </header>

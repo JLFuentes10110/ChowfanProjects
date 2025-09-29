@@ -56,9 +56,12 @@ body {
 }
 
 .coffee-icon {
-  font-size: 3rem;
-  margin-bottom: 10px;
+  width: 15%;
+  height: auto;
+  margin-bottom: 5px;
   animation: bounce 2s infinite;
+  filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.3));
+
 }
 
 @keyframes bounce {
