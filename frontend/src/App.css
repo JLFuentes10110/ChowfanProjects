@@ -11,7 +11,17 @@ body {
   background: linear-gradient(135deg, #8B4513 0%, #D2691E 25%, #CD853F 50%, #DEB887 75%, #F5DEB3 100%);
   min-height: 100vh;
   color: #3C2415;
+  cursor: url("/cursors/Coffee.cur") 4 4, auto;
 }
+
+input, textarea {
+  cursor: url("/cursors/Coffeetext.cur") 4 4, text;
+}
+
+a, button {
+  cursor: url("/cursors/Coffeeselect.cur") 4 4, pointer !important;
+}
+
 
 .app {
   min-height: 100vh;
@@ -92,6 +102,14 @@ body {
 
 .form-group {
   margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #8B4513; 
+  font-size: 0.9rem;
 }
 
 .input-field, .textarea-field {
