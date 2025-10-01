@@ -49,6 +49,10 @@ function App() {
         <div className="form-container">
           <div className="form-group">
             <label className="input-label" htmlFor="user_name">Your Name</label>
+
+            <div className="form-group">
+              <label className="input-label" htmlFor="user_name">Your Name</label>
+
               <input 
                 id="user_name"
                 name="user_name" 
@@ -59,6 +63,11 @@ function App() {
             </div>
           <div className="form-group">
             <label className="input-label" htmlFor="title">Note Title</label>
+
+
+            <div className="form-group">
+              <label className="input-label" htmlFor="title">Note Title</label>
+
               <input 
                 id="title"
                 name="title" 
