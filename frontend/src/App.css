@@ -11,7 +11,17 @@ body {
   background: linear-gradient(135deg, #8B4513 0%, #D2691E 25%, #CD853F 50%, #DEB887 75%, #F5DEB3 100%);
   min-height: 100vh;
   color: #3C2415;
+  cursor: url("/cursors/Coffee.cur") 4 4, auto;
 }
+
+input, textarea {
+  cursor: url("/cursors/Coffeetext.cur") 4 4, text;
+}
+
+a, button {
+  cursor: url("/cursors/Coffeeselect.cur") 4 4, pointer !important;
+}
+
 
 .app {
   min-height: 100vh;
@@ -56,9 +66,12 @@ body {
 }
 
 .coffee-icon {
-  font-size: 3rem;
-  margin-bottom: 10px;
+  width: 15%;
+  height: auto;
+  margin-bottom: 5px;
   animation: bounce 2s infinite;
+  filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.3));
+
 }
 
 @keyframes bounce {
@@ -98,8 +111,6 @@ body {
   color: #8B4513; 
   font-size: 0.9rem;
 }
-
-
 .input-field, .textarea-field {
   width: 100%;
   padding: 15px 20px;

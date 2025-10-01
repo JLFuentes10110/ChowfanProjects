@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import logo from "./assets/logo.png";
 import './App.css';
 
 function App() {
@@ -37,14 +38,21 @@ function App() {
     <div className="app">
       <div className="container">
         <header className="header">
-          <div className="coffee-icon">☕</div>
+          <img 
+            src={logo}
+            className="coffee-icon" 
+          />
           <h1 className="title">Coffee Notes</h1>
           <p className="subtitle">Brew your thoughts, one note at a time</p>
         </header>
 
         <div className="form-container">
+          <div className="form-group">
+            <label className="input-label" htmlFor="user_name">Your Name</label>
+
             <div className="form-group">
               <label className="input-label" htmlFor="user_name">Your Name</label>
+
               <input 
                 id="user_name"
                 name="user_name" 
@@ -53,9 +61,13 @@ function App() {
                 className="input-field"
               />
             </div>
+          <div className="form-group">
+            <label className="input-label" htmlFor="title">Note Title</label>
+
 
             <div className="form-group">
               <label className="input-label" htmlFor="title">Note Title</label>
+
               <input 
                 id="title"
                 name="title" 
