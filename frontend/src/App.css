@@ -290,6 +290,71 @@ a, button {
   font-style: italic;
 }
 
+/* Modal */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-box {
+  background: rgba(255, 255, 255, 0.9);
+  color: #3C2415;
+  border: 2px solid #DEB887;
+  box-shadow: 0 0 15px #deb8878e;
+
+  padding: 20px 30px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+}
+
+.modal-buttons {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.confirm-delete {
+  background: #A0522D;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.confirm-delete:hover {
+  background: #8B4513;
+  transform: scale(1.05);
+}
+
+
+.cancel-delete {
+  background: #F5DEB3;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.cancel-delete:hover {
+  background: #DEB887;
+  transform: scale(1.05);
+}
+
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
