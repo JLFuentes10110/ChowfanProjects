@@ -35,7 +35,7 @@ const SAVED_ADDRESSES = {
   },
   preview: {
     label: 'My Preview Address',
-    address: '', // User will provide this
+    address: 'addr_test1qq38gpyc4s8rwt7ddcqqguccmajlt64qgh0a0008yrrxk0smqaphl82trrggq6gck2xkynn4wsnlxyg77f2hla565sysuusytn',
   },
 };
 
