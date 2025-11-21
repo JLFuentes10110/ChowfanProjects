@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  connectionString: 'postgresql://postgres:admin@localhost:5432/notesapp'
+  connectionString: 'postgresql://postgres:admin@localhost:5432/notesapp' // notesapp . notesdb
 });
 
 const BLOCKFROST_PREPROD_URL = process.env.BLOCKFROST_PREPROD_URL || 'https://cardano-preprod.blockfrost.io/api/v0';
