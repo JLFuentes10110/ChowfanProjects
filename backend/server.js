@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  connectionString: 'postgresql://postgres:admin@localhost:5432/notesapp'
+  connectionString: 'postgresql://postgres:admin@localhost:5432/notesapp' // notesapp . notesdb
 });
 
 // GET all notes

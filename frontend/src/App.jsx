@@ -6,6 +6,9 @@ import './App.css';
 function App() {
   const [notes, setNotes] = useState([]);
   const [form, setForm] = useState({ user_name: '', title: '', content: '' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
+
 
   useEffect(() => { fetchNotes(); }, []);
 
@@ -38,18 +41,15 @@ function App() {
     <div className="app">
       <div className="container">
         <header className="header">
-          <img 
+          <img
             src={logo}
-            className="coffee-icon" 
+            className="coffee-icon"
           />
           <h1 className="title">Coffee Notes</h1>
           <p className="subtitle">Brew your thoughts, one note at a time</p>
         </header>
 
         <div className="form-container">
-          <div className="form-group">
-            <label className="input-label" htmlFor="user_name">Your Name</label>
-
             <div className="form-group">
               <label className="input-label" htmlFor="user_name">Your Name</label>
 
@@ -63,10 +63,6 @@ function App() {
             </div>
           <div className="form-group">
             <label className="input-label" htmlFor="title">Note Title</label>
-
-
-            <div className="form-group">
-              <label className="input-label" htmlFor="title">Note Title</label>
 
               <input 
                 id="title"
@@ -105,7 +101,10 @@ function App() {
                   <div className="note-header">
                     <h3 className="note-title">{note.title}</h3>
                     <button 
-                      onClick={() => deleteNote(note.id)} 
+                      onClick={() => {
+                        setNoteToDelete(note.id);
+                        setShowDeleteModal(true);
+                      }}
                       className="delete-button"
                       title="Delete note"
                     >
@@ -130,6 +129,32 @@ function App() {
           )}
         </div>
       </div>
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Delete Note</h3>
+            <p>Are you sure you want to delete this note?</p>
+
+            <div className="modal-buttons">
+              <button
+                className="cancel-delete"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="confirm-delete"
+                onClick={() => {
+                  deleteNote(noteToDelete);
+                  setShowDeleteModal(false);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
