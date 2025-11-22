@@ -14,14 +14,22 @@ body {
   cursor: url("/cursors/Coffee.cur") 4 4, auto;
 }
 
+label {
+  cursor: url("/cursors/Coffee.cur") 4 4, auto;
+}
+
 input, textarea {
   cursor: url("/cursors/Coffeetext.cur") 4 4, text;
 }
 
-a, button {
+a, button, select {
   cursor: url("/cursors/Coffeeselect.cur") 4 4, pointer !important;
 }
 
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  cursor: url("/cursors/Coffeeselect.cur") 4 4, pointer !important;
+}
 
 .app {
   min-height: 100vh;

@@ -11,6 +11,7 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
 import FaceIcon from '@mui/icons-material/Face';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const ADA_DECIMALS = 1_000_000;
 let cardanoSerializationLib;
@@ -444,7 +445,7 @@ function App() {
             <p className="wallet-value">{formatAddress(walletInfo.address)}</p>
             {walletInfo.address !== '-' && (
               <button className="copy-address-btn" onClick={copyAddress} title="Copy full address">
-                {addressCopied ? '✓ Copied' : '📋'}
+                {addressCopied ? '✓ Copied' : <ContentCopyIcon fontSize="small" style={{ verticalAlign: 'middle'}} />}
               </button>
             )}
           </div>
