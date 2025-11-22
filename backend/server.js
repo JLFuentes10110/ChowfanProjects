@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const fetch = require('node-fetch');
 const { Pool } = require('pg');
 
 const app = express();
@@ -11,6 +12,56 @@ app.use(express.json());
 const pool = new Pool({
   connectionString: 'postgresql://postgres:admin@localhost:5432/notesapp' // notesapp . notesdb
 });
+
+const BLOCKFROST_PREPROD_URL = process.env.BLOCKFROST_PREPROD_URL || 'https://cardano-preprod.blockfrost.io/api/v0';
+const BLOCKFROST_PREVIEW_URL = process.env.BLOCKFROST_PREVIEW_URL || 'https://cardano-preview.blockfrost.io/api/v0';
+const BLOCKFROST_PREPROD_PROJECT_ID = process.env.BLOCKFROST_PREPROD_PROJECT_ID || process.env.BLOCKFROST_PROJECT_ID || '';
+const BLOCKFROST_PREVIEW_PROJECT_ID = process.env.BLOCKFROST_PREVIEW_PROJECT_ID || process.env.BLOCKFROST_PROJECT_ID || '';
+
+const getBlockfrostConfig = (network = 'preprod') => {
+  const isPreview = network === 'preview';
+  const projectId = isPreview ? BLOCKFROST_PREVIEW_PROJECT_ID : BLOCKFROST_PREPROD_PROJECT_ID;
+  const baseUrl = isPreview ? BLOCKFROST_PREVIEW_URL : BLOCKFROST_PREPROD_URL;
+
+  if (!projectId) {
+    const error = new Error(`Blockfrost ${network} project id missing`);
+    error.code = 'BLOCKFROST_CONFIG';
+    throw error;
+  }
+
+  return { baseUrl, projectId };
+};
+
+const callBlockfrost = async (path, network = 'preprod', options = {}) => {
+  const { baseUrl, projectId } = getBlockfrostConfig(network);
+  const { rawResponse, ...rest } = options;
+  const headers = {
+    project_id: projectId,
+    ...(rest.headers || {})
+  };
+
+  if (rest.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...rest,
+    headers
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    const error = new Error(text || 'Blockfrost request failed');
+    error.status = response.status;
+    throw error;
+  }
+
+  if (rawResponse) {
+    return response;
+  }
+
+  return response.json();
+};
 
 // GET all notes
 app.get('/notes', async (req, res) => {
@@ -78,6 +129,71 @@ app.delete('/notes/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/wallet/balance/:address', async (req, res) => {
+  try {
+    const { address } = req.params;
+    const network = req.query.network || 'preprod';
+    const payload = await callBlockfrost(`/addresses/${address}`, network);
+    const lovelace = payload.amount?.find(a => a.unit === 'lovelace');
+    const balanceAda = lovelace ? (Number(lovelace.quantity) / 1_000_000).toFixed(6) : '0.000000';
+    res.json({
+      address,
+      balanceAda,
+      assets: payload.amount || []
+    });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 'BLOCKFROST_CONFIG') {
+      return res.status(400).json({ error: `BLOCKFROST_${req.query.network?.toUpperCase() || 'PREPROD'}_PROJECT_ID missing in server environment.` });
+    }
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message || 'Unable to fetch balance from Blockfrost' });
+  }
+});
+
+app.post('/wallet/submit', async (req, res) => {
+  try {
+    const { tx, network: txNetwork } = req.body;
+    if (!tx) {
+      return res.status(400).json({ error: 'Missing tx payload' });
+    }
+
+    const network = txNetwork || 'preprod';
+    const binary = Buffer.from(tx, 'hex');
+    const response = await callBlockfrost('/tx/submit', network, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/cbor' },
+      body: binary,
+      rawResponse: true
+    });
+    const hash = await response.text();
+    res.json({ hash: hash.trim() });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 'BLOCKFROST_CONFIG') {
+      return res.status(400).json({ error: `BLOCKFROST_${(req.body.network || 'preprod').toUpperCase()}_PROJECT_ID missing in server environment.` });
+    }
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message || 'Unable to submit transaction' });
+  }
+});
+
+app.get('/wallet/protocol-parameters', async (req, res) => {
+  try {
+    const network = req.query.network || 'preprod';
+    const parameters = await callBlockfrost('/epochs/latest/parameters', network);
+    const tip = await callBlockfrost('/blocks/latest', network);
+    res.json({ parameters, tip });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 'BLOCKFROST_CONFIG') {
+      return res.status(400).json({ error: `BLOCKFROST_${(req.query.network || 'preprod').toUpperCase()}_PROJECT_ID missing in server environment.` });
+    }
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message || 'Unable to fetch protocol parameters' });
   }
 });
 

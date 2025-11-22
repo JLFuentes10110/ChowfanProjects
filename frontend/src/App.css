@@ -558,6 +558,10 @@ input[type="number"]::-webkit-outer-spin-button {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #8B4513;
+  font-weight: 600;
 }
 
 .copy-address-btn:hover {
@@ -761,6 +765,29 @@ input[type="number"]::-webkit-outer-spin-button {
 @media (max-width: 992px) {
   .app-shell {
     flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    flex: 1;
+  }
+
+  .sidebar-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .sidebar-item:hover,
+  .sidebar-item.active {
+    transform: translateY(-2px);
+  }
   }
 
   .sidebar {
