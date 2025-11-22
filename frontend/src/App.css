@@ -56,6 +56,7 @@ input[type="number"]::-webkit-outer-spin-button {
   flex-direction: column;
   padding: 30px 20px;
   gap: 20px;
+  flex-shrink: 0;
 }
 
 .sidebar-header {
@@ -131,6 +132,7 @@ input[type="number"]::-webkit-outer-spin-button {
   background: rgba(255, 255, 255, 0.95);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .notes-view,
@@ -177,7 +179,6 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-bottom: 5px;
   animation: bounce 2s infinite;
   filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.3));
-
 }
 
 @keyframes bounce {
@@ -217,6 +218,7 @@ input[type="number"]::-webkit-outer-spin-button {
   color: #8B4513; 
   font-size: 0.9rem;
 }
+
 .input-field, .textarea-field {
   width: 100%;
   padding: 15px 20px;
@@ -359,13 +361,11 @@ input[type="number"]::-webkit-outer-spin-button {
   border-radius: 50%;
   width: 40px;
   height: 40px;
-
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
   opacity: 0.7;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -401,7 +401,6 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .note-author {
   font-weight: 500;
-
   display: flex;
   align-items: center;
   gap: 5px;
@@ -416,7 +415,6 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Modal */
-
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -435,7 +433,6 @@ input[type="number"]::-webkit-outer-spin-button {
   color: #3C2415;
   border: 2px solid #DEB887;
   box-shadow: 0 0 15px #deb8878e;
-
   padding: 20px 30px;
   border-radius: 12px;
   width: 320px;
@@ -464,7 +461,6 @@ input[type="number"]::-webkit-outer-spin-button {
   transform: scale(1.05);
 }
 
-
 .cancel-delete {
   background: #F5DEB3;
   padding: 8px 12px;
@@ -479,6 +475,7 @@ input[type="number"]::-webkit-outer-spin-button {
   transform: scale(1.05);
 }
 
+/* Wallet Styles */
 .wallet-view {
   background: linear-gradient(135deg, #FFF8DC 0%, #FDF5E6 100%);
 }
@@ -553,15 +550,11 @@ input[type="number"]::-webkit-outer-spin-button {
   transition: all 0.3s ease;
   color: #8B4513;
   font-weight: 600;
-
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: #8B4513;
-  font-weight: 600;
 }
 
 .copy-address-btn:hover {
@@ -596,7 +589,6 @@ input[type="number"]::-webkit-outer-spin-button {
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
-
   display: flex;
   align-items: center;
   gap: 8px;
@@ -640,6 +632,16 @@ input[type="number"]::-webkit-outer-spin-button {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.connect-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connect-button svg {
+  font-size: 20px;
 }
 
 .refresh-button {
@@ -772,29 +774,7 @@ input[type="number"]::-webkit-outer-spin-button {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-  }
-
-  .sidebar-menu {
-    flex-direction: row;
-    flex: 1;
-  }
-
-  .sidebar-item {
-    flex: 1;
-    text-align: center;
-  }
-
-  .sidebar-item:hover,
-  .sidebar-item.active {
-    transform: translateY(-2px);
-  }
-  }
-
-  .sidebar {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+    padding: 20px;
   }
 
   .sidebar-menu {

@@ -15,7 +15,6 @@
     "@emurgo/cardano-serialization-lib-browser": "^15.0.3",
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
-    "@emurgo/cardano-serialization-lib-browser": "^15.0.3",
     "axios": "^1.12.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
