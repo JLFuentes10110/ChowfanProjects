@@ -2,6 +2,47 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import logo from './assets/logo.png';
 import './App.css';
+import Wallet from "./Wallet";
+import Notes from "./Notes";
+
+import CoffeeIcon from '@mui/icons-material/Coffee';
+import WalletIcon from '@mui/icons-material/Wallet';
+
+const ADA_DECIMALS = 1_000_000;
+let cardanoSerializationLib;
+
+const getCsl = async () => {
+  if (!cardanoSerializationLib) {
+    try {
+      cardanoSerializationLib = await import('@emurgo/cardano-serialization-lib-browser');
+    } catch (err) {
+      console.error('Failed to load Cardano serialization library:', err);
+      throw new Error('Cardano library failed to load. Please refresh the page.');
+    }
+  }
+  return cardanoSerializationLib;
+};
+
+const hexToBytes = (hex = '') => {
+  if (!hex) return new Uint8Array();
+  return new Uint8Array((hex.match(/.{1,2}/g) || []).map((byte) => parseInt(byte, 16)));
+};
+
+const bytesToHex = (bytes = new Uint8Array()) =>
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+const SAVED_ADDRESSES = {
+  preprod: {
+    label: 'My Preprod Address',
+    address: 'addr_test1qq38gpyc4s8rwt7ddcqqguccmajlt64qgh0a0008yrrxk0smqaphl82trrggq6gck2xkynn4wsnlxyg77f2hla565sysuusytn',
+  },
+  preview: {
+    label: 'My Preview Address',
+    address: 'addr_test1qq38gpyc4s8rwt7ddcqqguccmajlt64qgh0a0008yrrxk0smqaphl82trrggq6gck2xkynn4wsnlxyg77f2hla565sysuusytn',
+  },
+};
 
 const ADA_DECIMALS = 1_000_000;
 let cardanoSerializationLib;
@@ -66,6 +107,8 @@ function App() {
     } catch (err) {
       console.error(err);
     }
+  };
+
   };
 
   // NEW: Get balance directly from Lace wallet
@@ -136,6 +179,312 @@ function App() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // NEW: Get balance directly from Lace wallet
+  const fetchWalletBalance = async () => {
+    if (!laceApi || walletStatus !== 'connected') return;
+    
+    setWalletRefreshing(true);
+    try {
+      setWalletInfo((prev) => ({ ...prev, balanceAda: '...' }));
+      
+      // Get balance directly from Lace
+      const balanceHex = await laceApi.getBalance();
+      const balanceLovelace = parseInt(balanceHex, 16);
+      const balanceAda = (balanceLovelace / ADA_DECIMALS).toFixed(2);
+      
+      setWalletInfo((prev) => ({ ...prev, balanceAda }));
+      setWalletError(''); // Clear any previous errors
+    } catch (err) {
+      console.error('Error fetching balance from Lace:', err);
+      setWalletError('Unable to fetch balance from wallet.');
+      setWalletInfo((prev) => ({ ...prev, balanceAda: '0.00' }));
+    } finally {
+      setWalletRefreshing(false);
+    }
+  };
+
+  const copyAddress = async () => {
+    if (walletInfo.address && walletInfo.address !== '-') {
+      try {
+        await navigator.clipboard.writeText(walletInfo.address);
+        setAddressCopied(true);
+        setTimeout(() => setAddressCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy address:', err);
+      }
+    }
+  };
+
+  const selectSavedAddress = (address) => {
+    setTxForm((prev) => ({ ...prev, recipient: address }));
+  };
+
+  const convertHexToBech32 = async (hexAddress) => {
+    if (!hexAddress) return '-';
+    const csl = await getCsl();
+    const address = csl.Address.from_bytes(hexToBytes(hexAddress));
+    return address.to_bech32();
+  };
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleTxFormChange = (e) => setTxForm({ ...txForm, [e.target.name]: e.target.value });
+
+  const formatAddress = (addr = '') => (addr.length <= 16 ? addr : `${addr.slice(0, 12)}...${addr.slice(-6)}`);
+
+  const connectWallet = async () => {
+    setWalletError('');
+    const mockPayload = {
+      address: 'addr_test1qpcoffee0mock0wallet0lace0demo',
+      rawAddress: '',
+      balanceAda: '125.35',
+      provider: 'mock',
+    };
+
+    if (!laceAvailable) {
+      setWalletInfo(mockPayload);
+      setWalletStatus('mock');
+      setWalletError('Lace extension not detected. Running in mock mode.');
+      return;
+    }
+
+    try {
+      setWalletStatus('connecting');
+      const api = await window.cardano.lace.enable();
+      setLaceApi(api);
+      const addresses = await api.getUsedAddresses();
+      const detectedAddressHex = addresses?.[0] || (await api.getChangeAddress());
+      const detectedAddress = await convertHexToBech32(detectedAddressHex);
+      setWalletInfo({
+        address: detectedAddress,
+        rawAddress: detectedAddressHex,
+        balanceAda: '...',
+        provider: 'lace',
+      });
+      setWalletStatus('connected');
+      
+      // Fetch balance directly from Lace after connection
+      const balanceHex = await api.getBalance();
+      const balanceLovelace = parseInt(balanceHex, 16);
+      const balanceAda = (balanceLovelace / ADA_DECIMALS).toFixed(2);
+      setWalletInfo((prev) => ({ ...prev, balanceAda }));
+    } catch (err) {
+      console.error(err);
+      setWalletStatus('error');
+      setWalletError(err?.message || 'Unable to connect to Lace. Please approve the request.');
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWalletInfo({ address: '-', rawAddress: '', balanceAda: '0.00', provider: 'none' });
+    setWalletStatus('disconnected');
+    setLaceApi(null);
+    setTxHistory([]);
+    setWalletError('');
+  };
+
+  const runMockTransaction = async () => {
+    const txEntry = {
+      id: crypto.randomUUID(),
+      recipient: txForm.recipient,
+      amount: txForm.amount,
+      timestamp: new Date().toISOString(),
+      status: 'simulated',
+      mode: 'mock',
+    };
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    txEntry.hash = `SIM-${Date.now()}`;
+    setTxHistory((prev) => [txEntry, ...prev]);
+    setTxForm({ recipient: '', amount: '' });
+  };
+
+  const sendFunds = async () => {
+    if (!txForm.recipient.trim() || Number(txForm.amount) <= 0) return;
+
+    if (!laceAvailable || walletStatus !== 'connected' || !laceApi) {
+      setWalletError('Running in mock mode because Lace is not connected.');
+      setTxSending(true);
+      try {
+        await runMockTransaction();
+      } finally {
+        setTxSending(false);
+      }
+      return;
+    }
+
+    setTxSending(true);
+    setWalletError('');
+    try {
+      const csl = await getCsl();
+      const amountLovelace = Math.floor(Number(txForm.amount) * ADA_DECIMALS);
+      if (!Number.isFinite(amountLovelace) || amountLovelace <= 0) {
+        throw new Error('Enter an amount greater than 0');
+      }
+
+      const { data: protocol } = await axios.get(`http://localhost:5000/wallet/protocol-parameters?network=${network}`);
+      const { parameters, tip } = protocol;
+      if (!parameters) {
+        throw new Error('Protocol parameters unavailable. Check backend configuration.');
+      }
+      const maxValueSize = Number(parameters.max_val_size || parameters.max_value_size || 5000);
+      const maxTxSize = Number(parameters.max_tx_size || 16384);
+
+      const txConfig = csl.TransactionBuilderConfigBuilder.new()
+        .fee_algo(
+          csl.LinearFee.new(
+            csl.BigNum.from_str(String(parameters.min_fee_a)),
+            csl.BigNum.from_str(String(parameters.min_fee_b))
+          )
+        )
+        .coins_per_utxo_byte(csl.BigNum.from_str(String(parameters.coins_per_utxo_size)))
+        .key_deposit(csl.BigNum.from_str(String(parameters.key_deposit)))
+        .pool_deposit(csl.BigNum.from_str(String(parameters.pool_deposit)))
+        .max_tx_size(maxTxSize)
+        .max_value_size(maxValueSize)
+        .build();
+
+      const txBuilder = csl.TransactionBuilder.new(txConfig);
+      const utxos = await laceApi.getUtxos(undefined, 50);
+
+      if (!utxos || utxos.length === 0) {
+        throw new Error('No UTXOs found in Lace wallet.');
+      }
+
+      utxos.forEach((utxoHex) => {
+        const utxo = csl.TransactionUnspentOutput.from_bytes(hexToBytes(utxoHex));
+        txBuilder.add_input(utxo.output().address(), utxo.input(), utxo.output().amount());
+      });
+
+      const recipientAddress = csl.Address.from_bech32(txForm.recipient.trim());
+      const output = csl.TransactionOutput.new(
+        recipientAddress,
+        csl.Value.new(csl.BigNum.from_str(String(amountLovelace)))
+      );
+      txBuilder.add_output(output);
+
+      const ttl = (tip?.slot || 0) + 3600;
+      if (ttl > 0) {
+        txBuilder.set_ttl(ttl);
+      }
+
+      const changeAddressHex = await laceApi.getChangeAddress();
+      const changeAddress = csl.Address.from_bytes(hexToBytes(changeAddressHex));
+      txBuilder.add_change_if_needed(changeAddress);
+
+      const txBody = txBuilder.build();
+      const tx = csl.Transaction.new(txBody, csl.TransactionWitnessSet.new());
+      const txHex = bytesToHex(tx.to_bytes());
+
+      const witnessSetHex = await laceApi.signTx(txHex, true);
+      const txWitnessSet = csl.TransactionWitnessSet.from_bytes(hexToBytes(witnessSetHex));
+      const signedTx = csl.Transaction.new(txBody, txWitnessSet, tx.auxiliary_data());
+      const signedTxHex = bytesToHex(signedTx.to_bytes());
+
+      const submitRes = await axios.post('http://localhost:5000/wallet/submit', { tx: signedTxHex, network });
+      const txHash = submitRes.data.hash || `0x${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+
+      setTxHistory((prev) => [
+        {
+          id: txHash,
+          recipient: txForm.recipient,
+          amount: txForm.amount,
+          timestamp: new Date().toISOString(),
+          status: 'submitted',
+          hash: txHash,
+          mode: 'lace',
+        },
+        ...prev,
+      ]);
+      setTxForm({ recipient: '', amount: '' });
+      
+      // Refresh balance after sending
+      await fetchWalletBalance();
+    } catch (err) {
+      console.error(err);
+      const message =
+        err?.response?.data?.error ||
+        err?.message ||
+        'Transaction failed or was rejected. Please check backend logs.';
+      setWalletError(message);
+    } finally {
+      setTxSending(false);
+    }
+  };
+
+  return (
+    <div className="app">
+      <div className="app-shell">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <img src={logo} className="sidebar-logo" />
+            <div>
+              <p className="sidebar-title">Chowfan</p>
+              <p className="sidebar-subtitle">Coffee Suite</p>
+            </div>
+          </div>
+          <nav className="sidebar-menu">
+            <button
+              className={`sidebar-item ${activeView === 'notes' ? 'active' : ''}`}
+              onClick={() => setActiveView('notes')}
+            >
+              <div className="sidebar-buttons">
+                <CoffeeIcon /> Notes
+              </div>
+            </button>
+            <button
+              className={`sidebar-item ${activeView === 'wallet' ? 'active' : ''}`}
+              onClick={() => setActiveView('wallet')}
+            >
+              <div className="sidebar-buttons">
+                <WalletIcon /> Wallet
+              </div>
+            </button>
+          </nav>
+          <div className="sidebar-footer">
+            <p>Powered by Lace-ready UI</p>
+          </div>
+        </aside>
+        <div className="content">
+          {activeView === "notes" && (
+            <Notes
+              form={form}
+              notes={notes}
+              handleChange={handleChange}
+              addNote={addNote}
+              deleteNote={deleteNote}
+              showDeleteModal={showDeleteModal}
+              setShowDeleteModal={setShowDeleteModal}
+              noteToDelete={noteToDelete}
+              setNoteToDelete={setNoteToDelete}
+            />
+          )}
+
+          {activeView === "wallet" && (
+            <Wallet
+              walletStatus={walletStatus}
+              walletInfo={walletInfo}
+              walletError={walletError}
+              walletRefreshing={walletRefreshing}
+              txSending={txSending}
+              txForm={txForm}
+              network={network}
+              txHistory={txHistory}
+              addressCopied={addressCopied}
+              SAVED_ADDRESSES={SAVED_ADDRESSES}
+              setNetwork={setNetwork}
+              formatAddress={formatAddress}
+              copyAddress={copyAddress}
+              sendFunds={sendFunds}
+              handleTxFormChange={handleTxFormChange}
+              fetchWalletBalance={fetchWalletBalance}
+              selectSavedAddress={selectSavedAddress}
+              connectWallet={connectWallet}
+              disconnectWallet={disconnectWallet}
+            />
+          )}
+
+        </div>
   };
 
   const formatAddress = (addr = '') => (addr.length <= 16 ? addr : `${addr.slice(0, 12)}...${addr.slice(-6)}`);
@@ -593,32 +942,6 @@ function App() {
         </aside>
         <div className="content">{activeView === 'notes' ? renderNotes() : renderWallet()}</div>
       </div>
-      {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="modal-box">
-            <h3>Delete Note</h3>
-            <p>Are you sure you want to delete this note?</p>
-
-            <div className="modal-buttons">
-              <button
-                className="cancel-delete"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="confirm-delete"
-                onClick={() => {
-                  deleteNote(noteToDelete);
-                  setShowDeleteModal(false);
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

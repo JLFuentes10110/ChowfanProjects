@@ -14,14 +14,22 @@ body {
   cursor: url("/cursors/Coffee.cur") 4 4, auto;
 }
 
+label {
+  cursor: url("/cursors/Coffee.cur") 4 4, auto;
+}
+
 input, textarea {
   cursor: url("/cursors/Coffeetext.cur") 4 4, text;
 }
 
-a, button {
+a, button, select {
   cursor: url("/cursors/Coffeeselect.cur") 4 4, pointer !important;
 }
 
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  cursor: url("/cursors/Coffeeselect.cur") 4 4, pointer !important;
+}
 
 .app {
   min-height: 100vh;
@@ -93,6 +101,16 @@ a, button {
   font-weight: 600;
   text-align: left;
   transition: all 0.3s ease;
+}
+
+.sidebar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-buttons svg {
+  font-size: 20px;
 }
 
 .sidebar-item:hover,
@@ -338,12 +356,23 @@ a, button {
   background: #ff6b6b;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 1rem;
   opacity: 0.7;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-button svg {
+  font-size: 20px;
 }
 
 .delete-button:hover {
@@ -372,6 +401,14 @@ a, button {
 
 .note-author {
   font-weight: 500;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.note-author svg {
+  font-size: 20px;
 }
 
 .note-date {
@@ -513,6 +550,14 @@ a, button {
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 0.9rem;
+  transition: all 0.3s ease;
+  color: #8B4513;
+  font-weight: 600;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   color: #8B4513;
@@ -551,6 +596,15 @@ a, button {
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.address-book-btn svg {
+  font-size: 18px;
+  margin-left: -3px;
 }
 
 .address-book-btn:hover {
@@ -711,6 +765,29 @@ a, button {
 @media (max-width: 992px) {
   .app-shell {
     flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    flex: 1;
+  }
+
+  .sidebar-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .sidebar-item:hover,
+  .sidebar-item.active {
+    transform: translateY(-2px);
+  }
   }
 
   .sidebar {

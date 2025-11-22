@@ -10,6 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@emurgo/cardano-serialization-lib-browser": "^15.0.3",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
     "@emurgo/cardano-serialization-lib-browser": "^15.0.3",
     "axios": "^1.12.2",
     "react": "^19.1.1",
