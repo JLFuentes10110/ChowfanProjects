@@ -73,6 +73,26 @@ function App() {
     }
   };
 
+  const addNote = async () => {
+    if (!form.user_name.trim() || !form.title.trim() || !form.content.trim()) return;
+    try {
+      const res = await axios.post('http://localhost:5000/notes', form);
+      setNotes((prev) => [res.data, ...prev]);
+      setForm({ user_name: '', title: '', content: '' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteNote = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/notes/${id}`);
+      setNotes((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // NEW: Get balance directly from Lace wallet
   const fetchWalletBalance = async () => {
     if (!laceApi || walletStatus !== 'connected') return;
@@ -122,26 +142,6 @@ function App() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   const handleTxFormChange = (e) => setTxForm({ ...txForm, [e.target.name]: e.target.value });
-
-  const addNote = async () => {
-    if (!form.user_name.trim() || !form.title.trim() || !form.content.trim()) return;
-    try {
-      const res = await axios.post('http://localhost:5000/notes', form);
-      setNotes((prev) => [res.data, ...prev]);
-      setForm({ user_name: '', title: '', content: '' });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const deleteNote = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/notes/${id}`);
-      setNotes((prev) => prev.filter((n) => n.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const formatAddress = (addr = '') => (addr.length <= 16 ? addr : `${addr.slice(0, 12)}...${addr.slice(-6)}`);
 
@@ -390,6 +390,9 @@ function App() {
               sendFunds={sendFunds}
               handleTxFormChange={handleTxFormChange}
               fetchWalletBalance={fetchWalletBalance}
+              selectSavedAddress={selectSavedAddress}
+              connectWallet={connectWallet}
+              disconnectWallet={disconnectWallet}
             />
           )}
 
