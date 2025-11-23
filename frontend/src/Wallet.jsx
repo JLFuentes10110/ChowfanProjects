@@ -19,6 +19,7 @@ export default function Wallet({
   txSending,
   txForm,
   txHistory,
+   detectedNetwork, // new prop to detect wallet network
   SAVED_ADDRESSES,
   formatAddress,
   copyAddress,
@@ -29,6 +30,8 @@ export default function Wallet({
   selectSavedAddress,
   sendFunds
 }) {
+   const networkMismatch = walletStatus === 'connected' && detectedNetwork && detectedNetwork !== network;
+
   return (
     <div className="wallet-view">
       <header className="header wallet-header">
@@ -43,7 +46,17 @@ export default function Wallet({
           <div className="wallet-card-header">
             <h2>Wallet Status</h2>
             <div className="network-selector">
-              <label className="wallet-label">Network</label>
+              <label className="wallet-label">Network
+        {/* Updated line to handle Network Mismatch - jl fuentes*/}
+                              {detectedNetwork && walletStatus === 'connected' && (
+                  <span style={{ fontSize: '0.75rem', opacity: 0.8, marginLeft: '4px' }}>
+                    (Wallet: {detectedNetwork})
+                  </span>
+                )}
+              </label>
+
+              {/* ends here*/}
+
               <select
                 value={network}
                 onChange={(e) => setNetwork(e.target.value)}
@@ -55,6 +68,28 @@ export default function Wallet({
             </div>
           </div>
 
+          {/* Continuation of handling Network Mismatch - jl fuentes*/}
+          {networkMismatch && (
+            <div style={{
+              background: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '8px',
+              padding: '12px',
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px',
+              fontSize: '0.85rem',
+              color: '#856404'
+            }}>
+              <WarningIcon style={{ fontSize: '18px', marginTop: '1px' }} />
+              <span>
+                Network mismatch! Your wallet is on <strong>{detectedNetwork}</strong> but you selected <strong>{network}</strong>. 
+                Switch to {detectedNetwork} or change your wallet network in Lace settings.
+              </span>
+            </div>
+          )}
+        {/* ends here*/}
           <p className={`status-badge status-${walletStatus}`}>
             {walletStatus === 'mock' ? 'Mock Mode' : walletStatus}
           </p>
@@ -92,7 +127,7 @@ export default function Wallet({
               </button>
             ) : (
               <button className="add-button disconnect-button" onClick={disconnectWallet}>
-                <span className="button-icon">🔒</span>
+                
                 Disconnect
               </button>
             )}
@@ -103,7 +138,7 @@ export default function Wallet({
                 onClick={fetchWalletBalance}
                 disabled={walletRefreshing}
               >
-                <span className="button-icon">🔄</span>
+                
                 Refresh
               </button>
             )}

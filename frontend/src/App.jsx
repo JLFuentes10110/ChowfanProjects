@@ -32,7 +32,7 @@ const bytesToHex = (bytes = new Uint8Array()) =>
   Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-
+//guys, pede mo muinsert ari sa inyohang saved addresses para testing purposes
 const SAVED_ADDRESSES = {
   preprod: {
     label: 'My Preprod Address',
@@ -42,6 +42,22 @@ const SAVED_ADDRESSES = {
     label: 'My Preview Address',
     address: 'addr_test1qq38gpyc4s8rwt7ddcqqguccmajlt64qgh0a0008yrrxk0smqaphl82trrggq6gck2xkynn4wsnlxyg77f2hla565sysuusytn',
   },
+};
+
+// Detect network from address -jl fuentes
+const detectNetworkFromAddress = async (address) => {
+  if (!address || address === '-') return 'preprod';
+  
+  // Cardano testnet addresses start with "addr_test"
+  // We can't reliably distinguish between preprod and preview from the address alone
+  // so we'll try to query Blockfrost for both networks
+  
+  if (address.startsWith('addr_test')) {
+    return 'preprod'; // Default to preprod for testnet
+  } else if (address.startsWith('addr')) {
+    return 'mainnet';
+  }
+  return 'preprod';
 };
 
 function App() {
@@ -57,6 +73,7 @@ function App() {
   const [txHistory, setTxHistory] = useState([]);
   const [txSending, setTxSending] = useState(false);
   const [network, setNetwork] = useState('preprod');
+   const [detectedNetwork, setDetectedNetwork] = useState(null); // ADDED THIS LINE - jl fuentes fix
   const [addressCopied, setAddressCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
@@ -65,7 +82,62 @@ function App() {
   useEffect(() => { 
     fetchNotes(); 
   }, []);
+ // Detect actual wallet network when connected -jl fuentes
+  useEffect(() => {
+    if (walletStatus === 'connected' && laceApi) {
+      detectWalletNetwork();
+    }
+  }, [walletStatus, laceApi]);
 
+  const detectWalletNetwork = async () => {
+    if (!laceApi) return;
+    
+    try {
+      // Try to get network ID from the wallet API
+      const networkId = await laceApi.getNetworkId();
+      
+      // Network IDs: 0 = testnet (preprod/preview), 1 = mainnet
+      if (networkId === 0) {
+        // For testnet, we need to check which testnet by trying to fetch balance
+        const address = walletInfo.address;
+        
+
+        // Japeth made changes here
+        // Try preview first
+
+         try {
+            await axios.get(`http://localhost:5000/wallet/balance/${address}?network=preview`);
+            setDetectedNetwork('preview');
+            setNetwork('preview');
+            return;
+          }
+        catch (previewErr) {
+          // If preview fails, try preprod
+                try {
+          await axios.get(`http://localhost:5000/wallet/balance/${address}?network=preprod`);
+          setDetectedNetwork('preprod');
+          setNetwork('preprod');
+          return;
+        }
+          catch (previewErr) {
+            console.error('Could not detect network from either preprod or preview');
+            setDetectedNetwork('preview'); // Default to preview if both fail
+          }
+        }
+      } else if (networkId === 1) {
+        setDetectedNetwork('mainnet');
+        setWalletError('Mainnet detected. This app only supports preprod and preview testnets.');
+      }
+    } catch (err) {
+      console.error('Error detecting wallet network:', err);
+      // Fallback to address-based detection
+      const detected = await detectNetworkFromAddress(walletInfo.address);
+      setDetectedNetwork(detected);
+      setNetwork(detected);
+    }
+  };
+
+// End of detect wallet network -jl fuentes
   const fetchNotes = async () => {
     try {
       const res = await axios.get('http://localhost:5000/notes');
@@ -74,28 +146,32 @@ function App() {
       console.error(err);
     }
   };
+// Fetch wallet balance - jl fuentes
+const fetchWalletBalance = async () => {
+  if (!laceApi || walletStatus !== 'connected') return;
 
-  const fetchWalletBalance = async () => {
-    if (!laceApi || walletStatus !== 'connected') return;
-    
-    setWalletRefreshing(true);
-    try {
-      setWalletInfo((prev) => ({ ...prev, balanceAda: '...' }));
-      
-      const balanceHex = await laceApi.getBalance();
-      const balanceLovelace = parseInt(balanceHex, 16);
-      const balanceAda = (balanceLovelace / ADA_DECIMALS).toFixed(2);
-      
-      setWalletInfo((prev) => ({ ...prev, balanceAda }));
-      setWalletError('');
-    } catch (err) {
-      console.error('Error fetching balance from Lace:', err);
-      setWalletError('Unable to fetch balance from wallet.');
-      setWalletInfo((prev) => ({ ...prev, balanceAda: '0.00' }));
-    } finally {
-      setWalletRefreshing(false);
-    }
-  };
+  setWalletRefreshing(true);
+  try {
+    setWalletInfo((prev) => ({ ...prev, balanceAda: '...' }));
+
+    const balanceHex = await laceApi.getBalance();
+    const csl = await getCsl();
+
+    const value = csl.Value.from_bytes(hexToBytes(balanceHex));
+    const lovelace = BigInt(value.coin().to_str());
+    const balanceAda = (Number(lovelace) / ADA_DECIMALS).toFixed(2);
+
+    setWalletInfo((prev) => ({ ...prev, balanceAda }));
+    setWalletError('');
+  } catch (err) {
+    console.error('Error fetching balance from Lace:', err);
+    setWalletError('Unable to fetch balance from wallet.');
+    setWalletInfo((prev) => ({ ...prev, balanceAda: '0.00' }));
+  } finally {
+    setWalletRefreshing(false);
+  }
+};
+//end fetch wallet balance - jl fuentes
 
   const copyAddress = async () => {
     if (walletInfo.address && walletInfo.address !== '-') {
@@ -144,6 +220,16 @@ function App() {
   };
 
   const formatAddress = (addr = '') => (addr.length <= 16 ? addr : `${addr.slice(0, 12)}...${addr.slice(-6)}`);
+// handling of network change -jl fuentes
+    const handleNetworkChange = (newNetwork) => {
+    if (walletStatus === 'connected' && detectedNetwork && detectedNetwork !== newNetwork) {
+      setWalletError(`⚠️ Warning: Your wallet is connected to ${detectedNetwork} but you selected ${newNetwork}. Transactions may fail. Please switch your wallet network in Lace settings.`);
+    } else {
+      setWalletError('');
+    }
+    setNetwork(newNetwork);
+  };
+  //end of network change handling -jl fuentes
 
   const connectWallet = async () => {
     setWalletError('');
@@ -175,11 +261,16 @@ function App() {
         provider: 'lace',
       });
       setWalletStatus('connected');
-      
-      const balanceHex = await api.getBalance();
-      const balanceLovelace = parseInt(balanceHex, 16);
-      const balanceAda = (balanceLovelace / ADA_DECIMALS).toFixed(2);
-      setWalletInfo((prev) => ({ ...prev, balanceAda }));
+// Fetch balance upon connection - jl fuentes  
+const balanceHex = await api.getBalance();
+const csl = await getCsl();
+
+const value = csl.Value.from_bytes(hexToBytes(balanceHex));
+const lovelace = BigInt(value.coin().to_str());
+const balanceAda = (Number(lovelace) / ADA_DECIMALS).toFixed(2);
+
+setWalletInfo((prev) => ({ ...prev, balanceAda }));
+//end fetch balance upon connection - jl fuentes
     } catch (err) {
       console.error(err);
       setWalletStatus('error');
@@ -223,6 +314,13 @@ function App() {
       }
       return;
     }
+
+        // Check for network mismatch before sending -jl fuentes
+    if (detectedNetwork && detectedNetwork !== network) {
+      setWalletError(`Cannot send: Wallet is on ${detectedNetwork} but you selected ${network}. Please change the network selector to match your wallet.`);
+      return;
+    }
+      //end
 
     setTxSending(true);
     setWalletError('');

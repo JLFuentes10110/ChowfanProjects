@@ -135,7 +135,14 @@ app.delete('/notes/:id', async (req, res) => {
 app.get('/wallet/balance/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const network = req.query.network || 'preprod';
+    const network = req.query.network;
+
+if (!network || !['preprod', 'preview'].includes(network)) {
+  return res.status(400).json({
+    error: 'Network must be specified: preprod or preview'
+  });
+}
+
     const payload = await callBlockfrost(`/addresses/${address}`, network);
     const lovelace = payload.amount?.find(a => a.unit === 'lovelace');
     const balanceAda = lovelace ? (Number(lovelace.quantity) / 1_000_000).toFixed(6) : '0.000000';
@@ -183,7 +190,14 @@ app.post('/wallet/submit', async (req, res) => {
 
 app.get('/wallet/protocol-parameters', async (req, res) => {
   try {
-    const network = req.query.network || 'preprod';
+   const network = req.query.network;
+
+if (!network || !['preprod', 'preview'].includes(network)) {
+  return res.status(400).json({
+    error: 'Network must be specified: preprod or preview'
+  });
+}
+
     const parameters = await callBlockfrost('/epochs/latest/parameters', network);
     const tip = await callBlockfrost('/blocks/latest', network);
     res.json({ parameters, tip });
@@ -196,6 +210,7 @@ app.get('/wallet/protocol-parameters', async (req, res) => {
     res.status(status).json({ error: err.message || 'Unable to fetch protocol parameters' });
   }
 });
+console.log("Preview Key Loaded:", process.env.BLOCKFROST_PREVIEW_PROJECT_ID);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
