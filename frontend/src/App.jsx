@@ -32,7 +32,7 @@ const bytesToHex = (bytes = new Uint8Array()) =>
   Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-//guys, pede mo muinsert ari sa inyohang saved addresses para testing purposes
+
 const SAVED_ADDRESSES = {
   preprod: {
     label: 'My Preprod Address',
@@ -44,16 +44,11 @@ const SAVED_ADDRESSES = {
   },
 };
 
-// Detect network from address -jl fuentes
 const detectNetworkFromAddress = async (address) => {
   if (!address || address === '-') return 'preprod';
   
-  // Cardano testnet addresses start with "addr_test"
-  // We can't reliably distinguish between preprod and preview from the address alone
-  // so we'll try to query Blockfrost for both networks
-  
   if (address.startsWith('addr_test')) {
-    return 'preprod'; // Default to preprod for testnet
+    return 'preprod';
   } else if (address.startsWith('addr')) {
     return 'mainnet';
   }
@@ -73,7 +68,7 @@ function App() {
   const [txHistory, setTxHistory] = useState([]);
   const [txSending, setTxSending] = useState(false);
   const [network, setNetwork] = useState('preprod');
-   const [detectedNetwork, setDetectedNetwork] = useState(null); // ADDED THIS LINE - jl fuentes fix
+  const [detectedNetwork, setDetectedNetwork] = useState(null);
   const [addressCopied, setAddressCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
@@ -82,7 +77,7 @@ function App() {
   useEffect(() => { 
     fetchNotes(); 
   }, []);
- // Detect actual wallet network when connected -jl fuentes
+
   useEffect(() => {
     if (walletStatus === 'connected' && laceApi) {
       detectWalletNetwork();
@@ -93,35 +88,25 @@ function App() {
     if (!laceApi) return;
     
     try {
-      // Try to get network ID from the wallet API
       const networkId = await laceApi.getNetworkId();
       
-      // Network IDs: 0 = testnet (preprod/preview), 1 = mainnet
       if (networkId === 0) {
-        // For testnet, we need to check which testnet by trying to fetch balance
         const address = walletInfo.address;
         
-
-        // Japeth made changes here
-        // Try preview first
-
-         try {
-            await axios.get(`http://localhost:5000/wallet/balance/${address}?network=preview`);
-            setDetectedNetwork('preview');
-            setNetwork('preview');
-            return;
-          }
-        catch (previewErr) {
-          // If preview fails, try preprod
-                try {
-          await axios.get(`http://localhost:5000/wallet/balance/${address}?network=preprod`);
-          setDetectedNetwork('preprod');
-          setNetwork('preprod');
+        try {
+          await axios.get(`http://localhost:5000/wallet/balance/${address}?network=preview`);
+          setDetectedNetwork('preview');
+          setNetwork('preview');
           return;
-        }
-          catch (previewErr) {
+        } catch (previewErr) {
+          try {
+            await axios.get(`http://localhost:5000/wallet/balance/${address}?network=preprod`);
+            setDetectedNetwork('preprod');
+            setNetwork('preprod');
+            return;
+          } catch (preprodErr) {
             console.error('Could not detect network from either preprod or preview');
-            setDetectedNetwork('preview'); // Default to preview if both fail
+            setDetectedNetwork('preview');
           }
         }
       } else if (networkId === 1) {
@@ -130,14 +115,12 @@ function App() {
       }
     } catch (err) {
       console.error('Error detecting wallet network:', err);
-      // Fallback to address-based detection
       const detected = await detectNetworkFromAddress(walletInfo.address);
       setDetectedNetwork(detected);
       setNetwork(detected);
     }
   };
 
-// End of detect wallet network -jl fuentes
   const fetchNotes = async () => {
     try {
       const res = await axios.get('http://localhost:5000/notes');
@@ -146,32 +129,31 @@ function App() {
       console.error(err);
     }
   };
-// Fetch wallet balance - jl fuentes
-const fetchWalletBalance = async () => {
-  if (!laceApi || walletStatus !== 'connected') return;
 
-  setWalletRefreshing(true);
-  try {
-    setWalletInfo((prev) => ({ ...prev, balanceAda: '...' }));
+  const fetchWalletBalance = async () => {
+    if (!laceApi || walletStatus !== 'connected') return;
 
-    const balanceHex = await laceApi.getBalance();
-    const csl = await getCsl();
+    setWalletRefreshing(true);
+    try {
+      setWalletInfo((prev) => ({ ...prev, balanceAda: '...' }));
 
-    const value = csl.Value.from_bytes(hexToBytes(balanceHex));
-    const lovelace = BigInt(value.coin().to_str());
-    const balanceAda = (Number(lovelace) / ADA_DECIMALS).toFixed(2);
+      const balanceHex = await laceApi.getBalance();
+      const csl = await getCsl();
 
-    setWalletInfo((prev) => ({ ...prev, balanceAda }));
-    setWalletError('');
-  } catch (err) {
-    console.error('Error fetching balance from Lace:', err);
-    setWalletError('Unable to fetch balance from wallet.');
-    setWalletInfo((prev) => ({ ...prev, balanceAda: '0.00' }));
-  } finally {
-    setWalletRefreshing(false);
-  }
-};
-//end fetch wallet balance - jl fuentes
+      const value = csl.Value.from_bytes(hexToBytes(balanceHex));
+      const lovelace = BigInt(value.coin().to_str());
+      const balanceAda = (Number(lovelace) / ADA_DECIMALS).toFixed(2);
+
+      setWalletInfo((prev) => ({ ...prev, balanceAda }));
+      setWalletError('');
+    } catch (err) {
+      console.error('Error fetching balance from Lace:', err);
+      setWalletError('Unable to fetch balance from wallet.');
+      setWalletInfo((prev) => ({ ...prev, balanceAda: '0.00' }));
+    } finally {
+      setWalletRefreshing(false);
+    }
+  };
 
   const copyAddress = async () => {
     if (walletInfo.address && walletInfo.address !== '-') {
@@ -220,16 +202,15 @@ const fetchWalletBalance = async () => {
   };
 
   const formatAddress = (addr = '') => (addr.length <= 16 ? addr : `${addr.slice(0, 12)}...${addr.slice(-6)}`);
-// handling of network change -jl fuentes
-    const handleNetworkChange = (newNetwork) => {
+
+  const handleNetworkChange = (newNetwork) => {
     if (walletStatus === 'connected' && detectedNetwork && detectedNetwork !== newNetwork) {
-      setWalletError(`⚠️ Warning: Your wallet is connected to ${detectedNetwork} but you selected ${newNetwork}. Transactions may fail. Please switch your wallet network in Lace settings.`);
+      setWalletError(`⚠️ Wallet is on ${detectedNetwork} but you selected ${newNetwork}.`);
     } else {
       setWalletError('');
     }
     setNetwork(newNetwork);
   };
-  //end of network change handling -jl fuentes
 
   const connectWallet = async () => {
     setWalletError('');
@@ -261,16 +242,15 @@ const fetchWalletBalance = async () => {
         provider: 'lace',
       });
       setWalletStatus('connected');
-// Fetch balance upon connection - jl fuentes  
-const balanceHex = await api.getBalance();
-const csl = await getCsl();
 
-const value = csl.Value.from_bytes(hexToBytes(balanceHex));
-const lovelace = BigInt(value.coin().to_str());
-const balanceAda = (Number(lovelace) / ADA_DECIMALS).toFixed(2);
+      const balanceHex = await api.getBalance();
+      const csl = await getCsl();
 
-setWalletInfo((prev) => ({ ...prev, balanceAda }));
-//end fetch balance upon connection - jl fuentes
+      const value = csl.Value.from_bytes(hexToBytes(balanceHex));
+      const lovelace = BigInt(value.coin().to_str());
+      const balanceAda = (Number(lovelace) / ADA_DECIMALS).toFixed(2);
+
+      setWalletInfo((prev) => ({ ...prev, balanceAda }));
     } catch (err) {
       console.error(err);
       setWalletStatus('error');
@@ -315,18 +295,27 @@ setWalletInfo((prev) => ({ ...prev, balanceAda }));
       return;
     }
 
-        // Check for network mismatch before sending -jl fuentes
     if (detectedNetwork && detectedNetwork !== network) {
       setWalletError(`Cannot send: Wallet is on ${detectedNetwork} but you selected ${network}. Please change the network selector to match your wallet.`);
       return;
     }
-      //end
 
     setTxSending(true);
     setWalletError('');
+    
     try {
+      console.log('Refreshing wallet state before transaction...');
+      await fetchWalletBalance();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const csl = await getCsl();
       const amountLovelace = Math.floor(Number(txForm.amount) * ADA_DECIMALS);
+      
+      console.log('=== TRANSACTION DETAILS ===');
+      console.log('Amount from form:', txForm.amount, 'ADA');
+      console.log('Amount in lovelace:', amountLovelace);
+      console.log('===========================');
+      
       if (!Number.isFinite(amountLovelace) || amountLovelace <= 0) {
         throw new Error('Enter an amount greater than 0');
       }
@@ -336,62 +325,183 @@ setWalletInfo((prev) => ({ ...prev, balanceAda }));
       if (!parameters) {
         throw new Error('Protocol parameters unavailable. Check backend configuration.');
       }
-      const maxValueSize = Number(parameters.max_val_size || parameters.max_value_size || 5000);
-      const maxTxSize = Number(parameters.max_tx_size || 16384);
 
-      const txConfig = csl.TransactionBuilderConfigBuilder.new()
-        .fee_algo(
-          csl.LinearFee.new(
-            csl.BigNum.from_str(String(parameters.min_fee_a)),
-            csl.BigNum.from_str(String(parameters.min_fee_b))
-          )
-        )
-        .coins_per_utxo_byte(csl.BigNum.from_str(String(parameters.coins_per_utxo_size)))
-        .key_deposit(csl.BigNum.from_str(String(parameters.key_deposit)))
-        .pool_deposit(csl.BigNum.from_str(String(parameters.pool_deposit)))
-        .max_tx_size(maxTxSize)
-        .max_value_size(maxValueSize)
-        .build();
+      console.log('Fetching fresh UTXOs from wallet...');
+      const utxosResult = await laceApi.getUtxos();
+      console.log("UTXOs structure:", utxosResult);
 
-      const txBuilder = csl.TransactionBuilder.new(txConfig);
-      const utxos = await laceApi.getUtxos(undefined, 50);
+      let utxos;
+      if (Array.isArray(utxosResult)) {
+        utxos = utxosResult;
+      } else if (utxosResult && typeof utxosResult === 'object') {
+        utxos = utxosResult.utxos || [];
+      } else {
+        utxos = [];
+      }
+
+      console.log("Processed UTXOs:", utxos);
 
       if (!utxos || utxos.length === 0) {
-        throw new Error('No UTXOs found in Lace wallet.');
+        throw new Error('No UTXOs found. Your wallet may be empty or using only change addresses.');
       }
 
+      // Calculate total input - KEEP BOTH VARIABLES
+      let totalInputValue = csl.BigNum.from_str('0');
+      let totalInputLovelace = csl.BigNum.from_str('0');
       utxos.forEach((utxoHex) => {
         const utxo = csl.TransactionUnspentOutput.from_bytes(hexToBytes(utxoHex));
-        txBuilder.add_input(utxo.output().address(), utxo.input(), utxo.output().amount());
+        const output = utxo.output();
+        const inputAmount = output.amount().coin();
+        totalInputValue = totalInputValue.checked_add(inputAmount);
+        totalInputLovelace = totalInputLovelace.checked_add(inputAmount);
+        console.log(`UTXO: ${utxo.input().transaction_id().to_hex()}#${utxo.input().index()}, Amount: ${inputAmount.to_str()}`);
       });
 
-      const recipientAddress = csl.Address.from_bech32(txForm.recipient.trim());
-      const output = csl.TransactionOutput.new(
-        recipientAddress,
-        csl.Value.new(csl.BigNum.from_str(String(amountLovelace)))
-      );
-      txBuilder.add_output(output);
+      console.log(`Total input value: ${totalInputValue.to_str()} lovelace`);
 
-      const ttl = (tip?.slot || 0) + 3600;
-      if (ttl > 0) {
-        txBuilder.set_ttl(ttl);
+      const requiredLovelace = csl.BigNum.from_str(String(amountLovelace));
+      const estimatedFee = csl.BigNum.from_str('200000');
+      const totalRequired = requiredLovelace.checked_add(estimatedFee);
+
+      if (totalInputValue.compare(totalRequired) < 0) {
+        throw new Error(`Insufficient funds. Need ${(Number(totalRequired.to_str()) / ADA_DECIMALS).toFixed(2)} ADA but only have ${(Number(totalInputValue.to_str()) / ADA_DECIMALS).toFixed(2)} ADA`);
       }
 
+      // Build transaction manually
+      console.log('Building transaction body manually...');
+      
+      const currentSlot = tip?.slot || tip?.slot_no || 0;
+      const ttlSlots = 3600;
+      const ttl = currentSlot + ttlSlots;
+      
+      console.log('Current slot:', currentSlot);
+      console.log('TTL slot:', ttl);
+      
+      const inputs = csl.TransactionInputs.new();
+      
+      console.log('Adding inputs to transaction...');
+      for (const utxoHex of utxos) {
+        const utxo = csl.TransactionUnspentOutput.from_bytes(hexToBytes(utxoHex));
+        inputs.add(utxo.input());
+        console.log(`Adding input: ${utxo.input().transaction_id().to_hex()}#${utxo.input().index()}`);
+        console.log(`  Address: ${utxo.output().address().to_bech32()}`);
+        console.log(`  Amount: ${utxo.output().amount().coin().to_str()} lovelace`);
+      }
+      
+      console.log(`Total input for TX: ${totalInputLovelace.to_str()} lovelace (${(Number(totalInputLovelace.to_str()) / ADA_DECIMALS).toFixed(2)} ADA)`);
+      
+      const outputs = csl.TransactionOutputs.new();
+      
+      const recipientAddress = csl.Address.from_bech32(txForm.recipient.trim());
+      const sendAmount = csl.BigNum.from_str(String(amountLovelace));
+      const recipientOutput = csl.TransactionOutput.new(
+        recipientAddress,
+        csl.Value.new(sendAmount)
+      );
+      outputs.add(recipientOutput);
+      console.log(`Added recipient output: ${amountLovelace} lovelace (${(amountLovelace / ADA_DECIMALS).toFixed(2)} ADA)`);
+      console.log(`Recipient address: ${txForm.recipient}`);
+      
       const changeAddressHex = await laceApi.getChangeAddress();
       const changeAddress = csl.Address.from_bytes(hexToBytes(changeAddressHex));
-      txBuilder.add_change_if_needed(changeAddress);
+      console.log('Adding change address:', changeAddress.to_bech32());
+      
+      const initialEstimatedFee = csl.BigNum.from_str('200000');
+      const initialChangeAmount = totalInputLovelace
+        .checked_sub(sendAmount)
+        .checked_sub(initialEstimatedFee);
+      
+      const changeOutput = csl.TransactionOutput.new(
+        changeAddress,
+        csl.Value.new(initialChangeAmount)
+      );
+      outputs.add(changeOutput);
+      
+      const txBody = csl.TransactionBody.new(
+        inputs,
+        outputs,
+        initialEstimatedFee,
+        ttl > 0 ? csl.BigNum.from_str(String(ttl)) : undefined
+      );
 
-      const txBody = txBuilder.build();
-      const tx = csl.Transaction.new(txBody, csl.TransactionWitnessSet.new());
+      const tempTx = csl.Transaction.new(txBody, csl.TransactionWitnessSet.new());
+      
+      const linearFee = csl.LinearFee.new(
+        csl.BigNum.from_str(String(parameters.min_fee_a)),
+        csl.BigNum.from_str(String(parameters.min_fee_b))
+      );
+      
+      // Calculate fee with witness overhead (each signature is ~100 bytes, so add buffer)
+      const baseFee = csl.min_fee(tempTx, linearFee);
+      const witnessOverhead = csl.BigNum.from_str('10000'); // Add ~0.01 ADA for witness overhead
+      const calculatedFee = baseFee.checked_add(witnessOverhead);
+      
+      console.log(`Calculated fee: ${calculatedFee.to_str()} lovelace (~${(Number(calculatedFee.to_str()) / ADA_DECIMALS).toFixed(6)} ADA)`);
+      
+      const finalChangeAmount = totalInputLovelace
+        .checked_sub(sendAmount)
+        .checked_sub(calculatedFee);
+      
+      console.log(`Final change: ${finalChangeAmount.to_str()} lovelace (${(Number(finalChangeAmount.to_str()) / ADA_DECIMALS).toFixed(2)} ADA)`);
+      
+      const finalOutputs = csl.TransactionOutputs.new();
+      finalOutputs.add(recipientOutput);
+      
+      const finalChangeOutput = csl.TransactionOutput.new(
+        changeAddress,
+        csl.Value.new(finalChangeAmount)
+      );
+      finalOutputs.add(finalChangeOutput);
+      
+      const finalTxBody = csl.TransactionBody.new(
+        inputs,
+        finalOutputs,
+        calculatedFee,
+        ttl > 0 ? ttl : undefined
+      );
+      
+      const tx = csl.Transaction.new(finalTxBody, csl.TransactionWitnessSet.new());
       const txHex = bytesToHex(tx.to_bytes());
 
       const witnessSetHex = await laceApi.signTx(txHex, true);
       const txWitnessSet = csl.TransactionWitnessSet.from_bytes(hexToBytes(witnessSetHex));
-      const signedTx = csl.Transaction.new(txBody, txWitnessSet, tx.auxiliary_data());
+      const signedTx = csl.Transaction.new(finalTxBody, txWitnessSet, tx.auxiliary_data());
       const signedTxHex = bytesToHex(signedTx.to_bytes());
 
-      const submitRes = await axios.post('http://localhost:5000/wallet/submit', { tx: signedTxHex, network });
-      const txHash = submitRes.data.hash || `0x${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+      let txHash;
+      try {
+        const submitRes = await axios.post('http://localhost:5000/wallet/submit', { tx: signedTxHex, network });
+        txHash = submitRes.data.hash || submitRes.data;
+        
+        if (typeof txHash === 'string') {
+          txHash = txHash.trim();
+        }
+        
+        console.log('Transaction submitted successfully! Hash:', txHash);
+      } catch (submitErr) {
+        console.log('Submit error details:', submitErr?.response?.data);
+        
+        const errorData = submitErr?.response?.data || {};
+        const errorText = errorData.message || errorData.error || JSON.stringify(errorData);
+        
+        console.log('Error text:', errorText);
+        
+        const hashMatch = errorText.match(/[a-f0-9]{64}/i);
+        if (hashMatch) {
+          txHash = hashMatch[0];
+          console.log('Transaction may have been submitted. Extracted hash from error:', txHash);
+        } else {
+          if (errorText.includes('already') || errorText.includes('duplicate')) {
+            console.log('Transaction was already submitted');
+            throw new Error('Transaction was already submitted. Please wait for confirmation.');
+          }
+          throw submitErr;
+        }
+      }
+
+      if (!txHash) {
+        txHash = `0x${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+      }
 
       setTxHistory((prev) => [
         {
@@ -406,8 +516,13 @@ setWalletInfo((prev) => ({ ...prev, balanceAda }));
         ...prev,
       ]);
       setTxForm({ recipient: '', amount: '' });
+      setWalletError('');
       
-      await fetchWalletBalance();
+      console.log('✅ Transaction recorded in history');
+      
+      setTimeout(async () => {
+        await fetchWalletBalance();
+      }, 2000);
     } catch (err) {
       console.error(err);
       const message =
@@ -478,10 +593,11 @@ setWalletInfo((prev) => ({ ...prev, balanceAda }));
               txSending={txSending}
               txForm={txForm}
               network={network}
+              detectedNetwork={detectedNetwork}
               txHistory={txHistory}
               addressCopied={addressCopied}
               SAVED_ADDRESSES={SAVED_ADDRESSES}
-              setNetwork={setNetwork}
+              setNetwork={handleNetworkChange}
               formatAddress={formatAddress}
               copyAddress={copyAddress}
               sendFunds={sendFunds}

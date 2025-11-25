@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@blaze-cardano/sdk": "^0.2.44",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@emurgo/cardano-serialization-lib-browser": "^15.0.3",
