@@ -10,8 +10,8 @@ A blockchain-based project with a clean architecture and seamless integration ac
 
 ---
 
-## 🎨 Frontend
-![App Screenshot](frontend/src/assets/UI.png)
+## 🎨Web Page
+![Demo GIF](assets/Chowfan.gif)
 
 
 ---
