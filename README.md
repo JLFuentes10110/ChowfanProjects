@@ -11,8 +11,7 @@ A blockchain-based project with a clean architecture and seamless integration ac
 ---
 
 ## 🎨Web Page
-![Demo GIF](assets/Chowfan.gif)
-
+![Demo GIF](frontend/src/assets/Chowfan.gif)
 
 ---
 
