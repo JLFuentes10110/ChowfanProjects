@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices';
 import PushPinIcon from '@mui/icons-material/PushPin';
@@ -6,7 +6,6 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import WarningIcon from '@mui/icons-material/Warning';
 import headercoffee from "./assets/logo.png";
 import './App.css';
-
 
 export default function Wallet({
   logo,
@@ -20,7 +19,7 @@ export default function Wallet({
   txSending,
   txForm,
   txHistory,
-   detectedNetwork, // new prop to detect wallet network
+  detectedNetwork, // new prop to detect wallet network
   SAVED_ADDRESSES,
   formatAddress,
   copyAddress,
@@ -31,7 +30,17 @@ export default function Wallet({
   selectSavedAddress,
   sendFunds
 }) {
-   const networkMismatch = walletStatus === 'connected' && detectedNetwork && detectedNetwork !== network;
+
+  // 🔒 Force network to preview PERMANENTLY
+  useEffect(() => {
+    setNetwork("preview");
+  }, []);
+
+  // ⚠ Only show mismatch if wallet is NOT preview
+  const networkMismatch =
+    walletStatus === 'connected' &&
+    detectedNetwork &&
+    detectedNetwork.toLowerCase() !== "preview";
 
   return (
     <div className="wallet-view">
@@ -42,28 +51,28 @@ export default function Wallet({
       </header>
 
       <div className="wallet-grid">
+
         {/* WALLET STATUS CARD */}
         <div className="wallet-card">
           <div className="wallet-card-header">
             <h2>Wallet Status</h2>
             <div className="network-selector">
               <label className="wallet-label">Network
-        {/* Updated line to handle Network Mismatch - jl fuentes*/}
-                              {detectedNetwork && walletStatus === 'connected' && (
+                {detectedNetwork && walletStatus === 'connected' && (
                   <span style={{ fontSize: '0.75rem', opacity: 0.8, marginLeft: '4px' }}>
                     (Wallet: {detectedNetwork})
                   </span>
                 )}
               </label>
 
-              {/* ends here*/}
+              {/* ⬇ Replaced dropdown with fixed preview label */}
               <div className="network-select static-network">
                 <span>Preview Network</span>
               </div>
             </div>
           </div>
 
-          {/* Continuation of handling Network Mismatch - jl fuentes*/}
+          {/* ⚠ Show mismatch ONLY if wallet network ≠ preview */}
           {networkMismatch && (
             <div style={{
               background: '#fff3cd',
@@ -79,12 +88,13 @@ export default function Wallet({
             }}>
               <WarningIcon style={{ fontSize: '18px', marginTop: '1px' }} />
               <span>
-                Network mismatch! Your wallet is on <strong>{detectedNetwork}</strong> but you selected <strong>{network}</strong>. 
-                Switch to {detectedNetwork} or change your wallet network in Lace settings.
+                Network mismatch! Your wallet is on <strong>{detectedNetwork}</strong> 
+                but this app is locked to <strong>Preview</strong>.  
+                Please switch to Preview in Lace settings.
               </span>
             </div>
           )}
-        {/* ends here*/}
+
           <p className={`status-badge status-${walletStatus}`}>
             {walletStatus === 'mock' ? 'Mock Mode' : walletStatus}
           </p>
@@ -122,7 +132,6 @@ export default function Wallet({
               </button>
             ) : (
               <button className="add-button disconnect-button" onClick={disconnectWallet}>
-                
                 Disconnect
               </button>
             )}
@@ -133,7 +142,6 @@ export default function Wallet({
                 onClick={fetchWalletBalance}
                 disabled={walletRefreshing}
               >
-                
                 Refresh
               </button>
             )}
@@ -141,6 +149,7 @@ export default function Wallet({
 
           {walletError && <p className="wallet-error">{walletError}</p>}
         </div>
+
 
         {/* SEND ADA CARD */}
         <div className="wallet-card tx-card">
@@ -219,11 +228,12 @@ export default function Wallet({
           </button>
 
           <p className="wallet-hint">
-            Balance is fetched directly from your Lace wallet.  
+            Balance is fetched directly from your Lace wallet.
             Transactions still require backend for protocol parameters.
           </p>
         </div>
       </div>
+
 
       {/* HISTORY */}
       <div className="wallet-card history-card">
