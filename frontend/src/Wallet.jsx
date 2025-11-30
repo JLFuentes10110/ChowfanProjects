@@ -31,12 +31,12 @@ export default function Wallet({
   sendFunds
 }) {
 
-  // 🔒 Force network to preview PERMANENTLY
+  //Force network to preview PERMANENTLY
   useEffect(() => {
     setNetwork("preview");
   }, []);
 
-  // ⚠ Only show mismatch if wallet is NOT preview
+  //Only show mismatch if wallet is NOT preview
   const networkMismatch =
     walletStatus === 'connected' &&
     detectedNetwork &&
@@ -65,14 +65,14 @@ export default function Wallet({
                 )}
               </label>
 
-              {/* ⬇ Replaced dropdown with fixed preview label */}
+              {/*Replaced dropdown with fixed preview label */}
               <div className="network-select static-network">
                 <span>Preview Network</span>
               </div>
             </div>
           </div>
 
-          {/* ⚠ Show mismatch ONLY if wallet network ≠ preview */}
+          {/*Show mismatch ONLY if wallet network ≠ preview */}
           {networkMismatch && (
             <div style={{
               background: '#fff3cd',
