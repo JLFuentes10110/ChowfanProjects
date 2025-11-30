@@ -63,7 +63,6 @@ export default function Wallet({
                 onChange={(e) => setNetwork(e.target.value)}
                 className="network-select"
               >
-                <option value="preprod">Preprod</option>
                 <option value="preview">Preview</option>
               </select>
             </div>
