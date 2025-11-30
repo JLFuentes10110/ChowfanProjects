@@ -40,10 +40,10 @@ export default function Wallet({
         <p className="subtitle">Brewed for Lace • Cardano-ready</p>
       </header>
 
-      <div className="wallet-grid" style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', padding: '30px' }}>
+<div className="wallet-grid" style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', padding: '30px' }}>        
         {/* WALLET STATUS CARD */}
-        <div className="wallet-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '350px' }}>
-          <div className="wallet-card-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="wallet-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '300px', flex: 1 }}>          
+            <div className="wallet-card-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <h2>Wallet Status</h2>
             <div className="network-selector">
               <label className="wallet-label">Network
@@ -136,7 +136,7 @@ export default function Wallet({
         </div>
 
         {/* SEND ADA CARD */}
-        <div className="wallet-card tx-card">
+        <div className="wallet-card tx-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '300px', flex: 2 }}>  {/* Added inline styles to match Wallet Status card */}
           <h2>Send ADA</h2>
 
           <div className="address-book">
