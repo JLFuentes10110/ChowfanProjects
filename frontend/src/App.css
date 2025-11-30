@@ -485,11 +485,13 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .wallet-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-  padding: 30px;
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));  /* Increase min-width to 350px for better wrapping */
+     gap: 20px;
+     padding: 30px;
+     justify-content: center;  /* Add centering (Grid supports this) */
 }
+   
 
 .wallet-card {
   background: white;

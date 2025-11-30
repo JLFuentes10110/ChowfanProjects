@@ -7,7 +7,6 @@ import WarningIcon from '@mui/icons-material/Warning';
 import headercoffee from "./assets/logo.png";
 import './App.css';
 
-
 export default function Wallet({
   logo,
   network,
@@ -20,7 +19,7 @@ export default function Wallet({
   txSending,
   txForm,
   txHistory,
-   detectedNetwork, // new prop to detect wallet network
+  detectedNetwork, // new prop to detect wallet network
   SAVED_ADDRESSES,
   formatAddress,
   copyAddress,
@@ -31,7 +30,7 @@ export default function Wallet({
   selectSavedAddress,
   sendFunds
 }) {
-   const networkMismatch = walletStatus === 'connected' && detectedNetwork && detectedNetwork !== network;
+  const networkMismatch = walletStatus === 'connected' && detectedNetwork && detectedNetwork !== network;
 
   return (
     <div className="wallet-view">
@@ -41,29 +40,25 @@ export default function Wallet({
         <p className="subtitle">Brewed for Lace • Cardano-ready</p>
       </header>
 
-      <div className="wallet-grid">
+      <div className="wallet-grid" style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', padding: '30px' }}>
         {/* WALLET STATUS CARD */}
-        <div className="wallet-card">
-          <div className="wallet-card-header">
+        <div className="wallet-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '350px' }}>
+          <div className="wallet-card-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <h2>Wallet Status</h2>
             <div className="network-selector">
               <label className="wallet-label">Network
-        {/* Updated line to handle Network Mismatch - jl fuentes*/}
-                              {detectedNetwork && walletStatus === 'connected' && (
+                {detectedNetwork && walletStatus === 'connected' && (
                   <span style={{ fontSize: '0.75rem', opacity: 0.8, marginLeft: '4px' }}>
                     (Wallet: {detectedNetwork})
                   </span>
                 )}
               </label>
-
-              {/* ends here*/}
               <div className="network-select static-network">
                 <span>Preview Network</span>
               </div>
             </div>
           </div>
 
-          {/* Continuation of handling Network Mismatch - jl fuentes*/}
           {networkMismatch && (
             <div style={{
               background: '#fff3cd',
@@ -84,7 +79,7 @@ export default function Wallet({
               </span>
             </div>
           )}
-        {/* ends here*/}
+
           <p className={`status-badge status-${walletStatus}`}>
             {walletStatus === 'mock' ? 'Mock Mode' : walletStatus}
           </p>
@@ -122,7 +117,6 @@ export default function Wallet({
               </button>
             ) : (
               <button className="add-button disconnect-button" onClick={disconnectWallet}>
-                
                 Disconnect
               </button>
             )}
@@ -133,7 +127,6 @@ export default function Wallet({
                 onClick={fetchWalletBalance}
                 disabled={walletRefreshing}
               >
-                
                 Refresh
               </button>
             )}
@@ -254,3 +247,4 @@ export default function Wallet({
     </div>
   );
 }
+ 
