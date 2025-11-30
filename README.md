@@ -4,7 +4,7 @@ A blockchain-based project with a clean architecture and seamless integration ac
 ---
 
 ## 🚀 Tech Stack
-- **Frontend:** JavaScript (React)  
+- **Frontend:** React + Vite, JavaScript
 - **Backend:** Java (Spring Boot)  
 - **Database:** PostgreSQL  
 
