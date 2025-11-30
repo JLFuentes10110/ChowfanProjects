@@ -57,14 +57,9 @@ export default function Wallet({
               </label>
 
               {/* ends here*/}
-
-              <select
-                value={network}
-                onChange={(e) => setNetwork(e.target.value)}
-                className="network-select"
-              >
-                <option value="preview">Preview</option>
-              </select>
+              <div className="network-select static-network">
+                <span>Preview Network</span>
+              </div>
             </div>
           </div>
 
