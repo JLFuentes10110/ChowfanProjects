@@ -19,7 +19,7 @@ export default function Wallet({
   txSending,
   txForm,
   txHistory,
-  detectedNetwork, // new prop to detect wallet network
+  detectedNetwork, // network returned by Lace/wallet
   SAVED_ADDRESSES,
   formatAddress,
   copyAddress,
@@ -30,7 +30,40 @@ export default function Wallet({
   selectSavedAddress,
   sendFunds
 }) {
-  const networkMismatch = walletStatus === 'connected' && detectedNetwork && detectedNetwork !== network;
+  // Normalize helper for comparisons and for saved-address lookup keys
+  const normalize = (net) =>
+    typeof net === "string" ? net.trim().toLowerCase() : net;
+
+  const normalizedNetwork = normalize(network); // e.g. "preview"
+  const normalizedDetected = normalize(detectedNetwork);
+
+  // Access saved addresses using normalized keys to avoid Preview/preview mismatch
+  const getSaved = (key) => {
+    const k = normalize(key);
+    if (!k || !SAVED_ADDRESSES) return undefined;
+    // If SAVED_ADDRESSES uses plain keys like 'preview', 'preprod', fallback defensively
+    if (SAVED_ADDRESSES[k]) return SAVED_ADDRESSES[k];
+    // if keys are stored differently (rare), attempt to find a case-insensitive match
+    const foundKey = Object.keys(SAVED_ADDRESSES).find(
+      (x) => normalize(x) === k
+    );
+    return foundKey ? SAVED_ADDRESSES[foundKey] : undefined;
+  };
+
+  // Determine true mismatch using normalized values
+  const networkMismatch =
+    walletStatus === "connected" &&
+    normalizedDetected &&
+    normalizedDetected !== normalizedNetwork;
+
+  // Convenience booleans for specific networks
+  const isPreviewSelected = normalizedNetwork === "preview";
+  const isPreprodSelected = normalizedNetwork === "preprod";
+
+  // Saved addresses for currently selected network
+  const savedForSelected = getSaved(normalizedNetwork);
+  const savedPreview = getSaved("preview");
+  const savedPreprod = getSaved("preprod");
 
   return (
     <div className="wallet-view">
@@ -40,11 +73,12 @@ export default function Wallet({
         <p className="subtitle">Brewed for Lace • Cardano-ready</p>
       </header>
 
-<div className="wallet-grid" style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', padding: '30px' }}>        
+      <div className="wallet-grid" style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', padding: '30px' }}>
         {/* WALLET STATUS CARD */}
-          <div className="wallet-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '300px', flex: 1 }}>          
-            <div className="wallet-card-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="wallet-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '300px', flex: 1 }}>
+          <div className="wallet-card-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <h2>Wallet Status</h2>
+
             <div className="network-selector">
               <label className="wallet-label">Network
                 {detectedNetwork && walletStatus === 'connected' && (
@@ -53,12 +87,15 @@ export default function Wallet({
                   </span>
                 )}
               </label>
+
+              {/* Show the selected network (normalized to uppercase label) */}
               <div className="network-select static-network">
-                <span>Preview Network</span>
+                <span>{(normalizedNetwork || 'preview').toUpperCase()} Network</span>
               </div>
             </div>
           </div>
 
+          {/* Accurate mismatch banner (only shows when the normalized values differ) */}
           {networkMismatch && (
             <div style={{
               background: '#fff3cd',
@@ -74,8 +111,8 @@ export default function Wallet({
             }}>
               <WarningIcon style={{ fontSize: '18px', marginTop: '1px' }} />
               <span>
-                Network mismatch! Your wallet is on <strong>{detectedNetwork}</strong> but you selected <strong>{network}</strong>. 
-                Switch to {detectedNetwork} or change your wallet network in Lace settings.
+                Network mismatch! Your wallet is on <strong>{detectedNetwork}</strong> but you selected <strong>{network}</strong>.
+                Switch the wallet network to <strong>{normalizedNetwork}</strong> or change your selected network in Lace settings.
               </span>
             </div>
           )}
@@ -90,7 +127,7 @@ export default function Wallet({
           <p className="wallet-label">Address</p>
           <div className="address-display">
             <p className="wallet-value">{formatAddress(walletInfo.address)}</p>
-            {walletInfo.address !== '-' && (
+            {walletInfo.address && walletInfo.address !== '-' && (
               <button
                 className="copy-address-btn"
                 onClick={copyAddress}
@@ -136,40 +173,43 @@ export default function Wallet({
         </div>
 
         {/* SEND ADA CARD */}
-        <div className="wallet-card tx-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '300px', flex: 2 }}>  {/* Added inline styles to match Wallet Status card */}
+        <div className="wallet-card tx-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '300px', flex: 2 }}>
           <h2>Send ADA</h2>
 
           <div className="address-book">
             <p className="wallet-label">Quick Select</p>
             <div className="address-book-buttons">
 
-              {SAVED_ADDRESSES[network]?.address && (
+              {/* Use savedForSelected which resolves using normalized key */}
+              {savedForSelected?.address && (
                 <button
                   className="address-book-btn"
-                  onClick={() => selectSavedAddress(SAVED_ADDRESSES[network].address)}
-                  title={SAVED_ADDRESSES[network].label}
+                  onClick={() => selectSavedAddress(savedForSelected.address)}
+                  title={savedForSelected.label}
                 >
-                  <PushPinIcon /> {SAVED_ADDRESSES[network].label}
+                  <PushPinIcon /> {savedForSelected.label}
                 </button>
               )}
 
-              {SAVED_ADDRESSES.preprod?.address && network !== 'preprod' && (
+              {/* If preview is available and not currently selected, show it as quick pick */}
+              {savedPreview?.address && !isPreviewSelected && (
                 <button
                   className="address-book-btn"
-                  onClick={() => selectSavedAddress(SAVED_ADDRESSES.preprod.address)}
-                  title={SAVED_ADDRESSES.preprod.label}
+                  onClick={() => selectSavedAddress(savedPreview.address)}
+                  title={savedPreview.label}
                 >
-                  <PushPinIcon /> {SAVED_ADDRESSES.preprod.label}
+                  <PushPinIcon /> {savedPreview.label}
                 </button>
               )}
 
-              {SAVED_ADDRESSES.preview?.address && network !== 'preview' && (
+              {/* If preprod is available and not currently selected, show it as quick pick */}
+              {savedPreprod?.address && !isPreprodSelected && (
                 <button
                   className="address-book-btn"
-                  onClick={() => selectSavedAddress(SAVED_ADDRESSES.preview.address)}
-                  title={SAVED_ADDRESSES.preview.label}
+                  onClick={() => selectSavedAddress(savedPreprod.address)}
+                  title={savedPreprod.label}
                 >
-                  <PushPinIcon /> {SAVED_ADDRESSES.preview.label}
+                  <PushPinIcon /> {savedPreprod.label}
                 </button>
               )}
 
@@ -212,7 +252,7 @@ export default function Wallet({
           </button>
 
           <p className="wallet-hint">
-            Balance is fetched directly from your Lace wallet.  
+            Balance is fetched directly from your Lace wallet.
             Transactions still require backend for protocol parameters.
           </p>
         </div>
@@ -247,4 +287,3 @@ export default function Wallet({
     </div>
   );
 }
- 
